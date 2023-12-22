@@ -1,13 +1,21 @@
-use axum::routing::get;
+use actix_web::{get, Responder};
 
+#[get("/")]
+async fn hello() -> impl Responder {
+    "Hello World!"
+}
 
-#[tokio::main]
-async fn main() {
-    let ip = local_ip_address::local_ip().expect("Could not get local IP address!");
-    let addr = std::net::SocketAddr::new(ip, 5555);
+#[actix_web::main]
+async fn main() -> std::io::Result<()> {
+    env_logger::init_from_env(env_logger::Env::new().default_filter_or("info"));
 
-    let app = axum::Router::new().route("/", get(|| async { "Hello, World!" }));
-    let listener = tokio::net::TcpListener::bind(addr).await.unwrap_or_else(|_| { panic!("Could not bind to address: {addr}") });
-    println!("Listening on http://{addr}");
-    axum::serve(listener, app).await.expect("Could not start server!");
+    let ip = local_ip_address::local_ip().unwrap();
+    actix_web::HttpServer::new(|| {
+        actix_web::App::new()
+            .wrap(actix_web::middleware::Logger::default())
+            .service(hello)
+    })
+    .bind((ip, 5555))?
+    .run()
+    .await
 }

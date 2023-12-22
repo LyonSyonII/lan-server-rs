@@ -1,5 +1,5 @@
 [package]
-name = "lan-server"
+name = "simple-server"
 version = "0.1.0"
 edition = "2021"
 

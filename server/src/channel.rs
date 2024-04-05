@@ -1,3 +1,5 @@
+use crate::CHANNELS;
+
 #[derive(serde::Serialize, serde::Deserialize, Debug)]
 pub(crate) struct Channel {
     pub(crate) name: String,
@@ -5,7 +7,7 @@ pub(crate) struct Channel {
         serialize_with = "serialize_messages",
         deserialize_with = "deserialize_messages"
     )]
-    pub(crate) messages: std::sync::RwLock<Vec<crate::message::Message>>,
+    pub(crate) messages: tokio::sync::RwLock<Vec<crate::message::Message>>,
 
     #[serde(skip)]
     #[serde(default = "new_channel")]
@@ -16,8 +18,8 @@ impl Channel {
     pub(crate) fn new(name: impl Into<String>) -> Self {
         Self {
             name: name.into(),
-            messages: std::sync::RwLock::new(Vec::new()),
-            tx: new_channel()
+            messages: tokio::sync::RwLock::new(Vec::new()),
+            tx: new_channel(),
         }
     }
 
@@ -32,9 +34,33 @@ impl Channel {
     pub(crate) fn send(&self, message: impl Into<String>) {
         let _ = self.tx.send(message.into());
     }
-    pub(crate) fn add_message(&self, message: impl Into<String>) {
-        let messages = &mut *self.messages.write().unwrap();
+    pub(crate) async fn add_message(self: &std::sync::Arc<Self>, message: impl Into<String>) {
+        let mut messages = self.messages.write().await;
         messages.push(crate::message::Message::new(message.into()));
+        drop(messages);
+        self.save_to_file().await.unwrap();
+    }
+    pub(crate) async fn save_to_file(self: &std::sync::Arc<Self>) -> std::io::Result<()> {
+        use tokio::io::AsyncWriteExt;
+
+        let path = std::path::PathBuf::from(CHANNELS)
+            .join(&self.name)
+            .with_extension("yaml");
+
+        let mut file = tokio::fs::OpenOptions::new()
+            .create(true)
+            .truncate(true)
+            .write(true)
+            .open(path)
+            .await?;
+        let clone = self.clone();
+        let serialized =
+            tokio::task::spawn_blocking(move || serde_yaml::to_string(&*clone).unwrap())
+                .await
+                .unwrap();
+        file.write_all(serialized.as_bytes()).await?;
+
+        Ok(())
     }
 }
 
@@ -44,18 +70,18 @@ fn new_channel() -> tokio::sync::broadcast::Sender<String> {
 }
 
 fn serialize_messages<S: serde::Serializer>(
-    messages: &std::sync::RwLock<Vec<crate::message::Message>>,
+    messages: &tokio::sync::RwLock<Vec<crate::message::Message>>,
     serializer: S,
 ) -> Result<S::Ok, S::Error> {
-    let messages = &*messages.read().unwrap();
+    let messages = &*messages.blocking_read();
     serde::ser::Serialize::serialize(messages, serializer)
 }
 
 fn deserialize_messages<'de, D: serde::Deserializer<'de>>(
     deserializer: D,
-) -> Result<std::sync::RwLock<Vec<crate::message::Message>>, D::Error> {
+) -> Result<tokio::sync::RwLock<Vec<crate::message::Message>>, D::Error> {
     let messages = serde::Deserialize::deserialize(deserializer)?;
-    Ok(std::sync::RwLock::new(messages))
+    Ok(tokio::sync::RwLock::new(messages))
 }
 
 impl std::fmt::Display for Channel {
@@ -69,7 +95,7 @@ impl Clone for Channel {
     fn clone(&self) -> Self {
         Self {
             name: self.name.clone(),
-            messages: std::sync::RwLock::new(self.messages.read().unwrap().clone()),
+            messages: tokio::sync::RwLock::new(self.messages.blocking_read().clone()),
             tx: self.tx.clone(),
         }
     }

@@ -3,8 +3,12 @@ use axum::routing::{get, post};
 mod channel;
 mod message;
 
+pub(crate) const CHANNELS: &str = "/tmp/hitori/channels";
+
 struct AppState {
-    channels: tokio::sync::RwLock<std::collections::HashMap<String, std::sync::Arc<crate::channel::Channel>>>,
+    channels: tokio::sync::RwLock<
+        std::collections::HashMap<String, std::sync::Arc<crate::channel::Channel>>,
+    >,
 }
 
 impl AppState {
@@ -19,15 +23,15 @@ impl AppState {
                 let channel: channel::Channel = serde_yaml::from_reader(reader).unwrap();
                 channels.insert(channel.name.clone(), std::sync::Arc::new(channel));
             }
-            Ok::<AppState, std::io::Error>(Self { 
-                channels: tokio::sync::RwLock::new(channels)
+            Ok::<AppState, std::io::Error>(Self {
+                channels: tokio::sync::RwLock::new(channels),
             })
         })
         .await
         .unwrap()
         .unwrap()
     }
-    
+
     /// Returns "true" if the channel already exists
     async fn create_channel(&self, name: impl Into<String>) -> bool {
         let channels = &mut *self.channels.write().await;
@@ -35,6 +39,7 @@ impl AppState {
         let channel = std::sync::Arc::new(crate::channel::Channel::new(name.clone()));
 
         if let std::collections::hash_map::Entry::Vacant(e) = channels.entry(name) {
+            channel.save_to_file().await.unwrap();
             e.insert(channel);
             false
         } else {
@@ -80,7 +85,7 @@ async fn post_channels(
     state: axum::extract::State<std::sync::Arc<AppState>>,
     name: axum::extract::Json<String>,
 ) -> impl axum::response::IntoResponse {
-    println!("Creating channel {:?}", name.0);
+    eprintln!("Creating channel {:?}", name.0);
     if state.create_channel(name.0).await {
         axum::http::StatusCode::CONFLICT
     } else {
@@ -90,7 +95,7 @@ async fn post_channels(
 
 #[derive(serde::Deserialize)]
 struct WebSocketParams {
-    channel: String
+    channel: String,
 }
 
 async fn websocket_handler(
@@ -99,23 +104,31 @@ async fn websocket_handler(
     state: axum::extract::State<std::sync::Arc<AppState>>,
 ) -> impl axum::response::IntoResponse {
     let WebSocketParams { channel } = params.0;
-    ws.on_upgrade( move |socket| websocket(channel, socket, state.0))
+    ws.on_upgrade(move |socket| websocket(channel, socket, state.0))
 }
 
-async fn websocket(channel: String, stream: axum::extract::ws::WebSocket, state: std::sync::Arc<AppState>) {
+async fn websocket(
+    channel: String,
+    stream: axum::extract::ws::WebSocket,
+    state: std::sync::Arc<AppState>,
+) {
     use futures::SinkExt as _;
     use futures::StreamExt as _; // .split()
 
     let (mut sender, mut receiver) = stream.split();
-    
+
     let channels = state.channels.read().await;
-    let Some(channel) = channels.get(&channel).cloned() else { return };
+    let Some(channel) = channels.get(&channel).cloned() else {
+        return;
+    };
     drop(channels);
 
     let (tx, mut rx) = channel.subscribe();
 
     let mut send_task = tokio::spawn(async move {
         while let Ok(msg) = rx.recv().await {
+            eprintln!("Sent message: {msg:?}");
+            channel.add_message(&msg).await;
             if sender
                 .send(axum::extract::ws::Message::Text(msg))
                 .await
@@ -137,6 +150,4 @@ async fn websocket(channel: String, stream: axum::extract::ws::WebSocket, state:
         _ = (&mut send_task) => recv_task.abort(),
         _ = (&mut recv_task) => send_task.abort()
     }
-
-    channel.send("Left!");
 }

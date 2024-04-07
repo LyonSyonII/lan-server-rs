@@ -9,6 +9,8 @@ export class IndexElement extends HTMLElement {
   
   public async connectedCallback() {
     
+    this.refreshState();
+    return;
     const websocket = new WebSocket("ws://192.168.1.47:5555/ws");
 /*     websocket.addEventListener("open", () => {
       websocket.send("connected");

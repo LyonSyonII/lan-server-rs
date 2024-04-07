@@ -1,4 +1,7 @@
 use axum::routing::{get, post};
+use serde::Serialize;
+
+use crate::channel::WebSocketMessage;
 
 mod channel;
 mod message;
@@ -60,6 +63,8 @@ async fn main() {
         .route("/ws", get(websocket_handler))
         .route("/channels", get(get_channels))
         .route("/channels", post(post_channels))
+        .route("/messages", get(get_messages))
+        .route("/messages/num", get(get_num_messages))
         .with_state(app_state);
     let listener = tokio::net::TcpListener::bind(addr)
         .await
@@ -94,6 +99,30 @@ async fn post_channels(
 }
 
 #[derive(serde::Deserialize)]
+struct GetMessagesParams {
+    channel: String,
+    from: usize,
+    num_messages: usize
+}
+
+async fn get_messages(query: axum::extract::Query<GetMessagesParams>, state: axum::extract::State<std::sync::Arc<AppState>>) -> axum::Json<Vec<message::Message>> {
+    let channels = state.channels.read().await;
+    let Some(channel) = channels.get(&query.channel) else {
+        return axum::Json(Vec::new());
+    };
+    axum::Json(channel.get_messages_range(query.from..query.num_messages).await)
+}
+
+async fn get_num_messages(query: axum::extract::Query<WebSocketParams>, state: axum::extract::State<std::sync::Arc<AppState>>) -> axum::Json<usize> {
+    let channels = state.channels.read().await;
+    let Some(channel) = channels.get(&query.channel) else {
+        return axum::Json(0);
+    };
+    let messages = channel.messages.read().await;
+    axum::Json(messages.len())
+}
+
+#[derive(serde::Deserialize)]
 struct WebSocketParams {
     channel: String,
 }
@@ -123,12 +152,13 @@ async fn websocket(
     };
     drop(channels);
 
+    let channel_name = channel.name.clone();
+
     let (tx, mut rx) = channel.subscribe();
 
     let mut send_task = tokio::spawn(async move {
         while let Ok(msg) = rx.recv().await {
-            eprintln!("Sent message: {msg:?}");
-            channel.add_message(&msg).await;
+            let msg = serde_json::to_string(&msg).unwrap();
             if sender
                 .send(axum::extract::ws::Message::Text(msg))
                 .await
@@ -140,8 +170,16 @@ async fn websocket(
     });
 
     let mut recv_task = tokio::spawn(async move {
-        while let Some(Ok(axum::extract::ws::Message::Text(text))) = receiver.next().await {
-            let _ = tx.send(text);
+        // Receive from websocket, add to channel messages and send to other websockets
+        while let Some(Ok(msg)) = receiver.next().await {
+            let msg = match msg {
+                axum::extract::ws::Message::Text(text) => serde_json::from_str::<WebSocketMessage>(&text).unwrap_or(WebSocketMessage::Text(text)),
+                axum::extract::ws::Message::Binary(b) => WebSocketMessage::File(b),
+                _ => break
+            };
+            eprintln!("[{channel_name}] received message: {msg:#?}");
+            // channel.add_message(&text).await;
+            let _ = tx.send(msg);
         }
     });
 

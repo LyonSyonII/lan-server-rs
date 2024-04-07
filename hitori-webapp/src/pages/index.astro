@@ -1,0 +1,64 @@
+---
+import { AstroFont } from "astro-font";
+import ChannelList from "../components/channel-list/ChannelList.astro";
+import MessageList from "../components/message-list/MessageList.astro";
+---
+
+<html lang="en">
+	<head>
+		<meta charset="utf-8" />
+		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+		<meta name="viewport" content="width=device-width" />
+		<meta name="generator" content={Astro.generator} />
+		<title>Astro</title>
+		<AstroFont
+			config = {[
+				{
+          src: [],
+          name: "Open Sans",
+          // Google Fonts URL
+          googleFontsURL: 'https://fonts.googleapis.com/css2?family=Open+Sans:ital,wdth,wght@0,75..100,300..800;1,75..100,300..800&display=swap',
+          preload: true,
+          display: "swap",
+          selector: "body",
+          fallback: "sans-serif",
+					fetch: true
+        },
+			]}
+		/>
+	</head>
+	<body>
+		<x-index>
+			<ChannelList />
+			<MessageList />
+		</x-index>
+	</body>
+</html>
+
+
+<style>
+	:global(:root) {
+		--padding: 1em;
+		--border-radius: 0.15em;
+	}
+	:root {
+		background-color: #313338;
+		color: white;
+	}
+	body, x-index {
+		margin: 0;
+		height: 100vh;
+		overflow: hidden;
+	}
+	@media screen and (min-width: 650px) {
+		x-index {
+			display: grid;
+			grid-template-columns: minmax(10%, 300px) auto;
+		}
+	}
+</style>
+
+<script>
+	import { IndexElement } from "../components/IndexElement";
+	customElements.define("x-index", IndexElement);
+</script>

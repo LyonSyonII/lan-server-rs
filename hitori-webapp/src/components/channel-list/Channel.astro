@@ -1,0 +1,54 @@
+---
+type Props = {
+  name: string;
+  selected?: boolean;
+  hidden?: boolean;
+};
+
+const { name, hidden } = Astro.props;
+---
+
+<x-channel style=`display: ${hidden ? "none" : "block"}` >
+  <div id="channels">
+    <p>
+      <span class="hash">#</span>
+      <span id="name">{name}</span>
+    </p>
+  </div>
+</x-channel>
+
+<style>
+  x-channel {
+    font-weight: 600;
+    color: #949ba4;
+    border: 1px;
+    border-color: transparent;
+    border-radius: var(--border-radius);
+  }
+  x-channel:hover {
+    background-color: #36373d;
+  }
+  x-channel[selected] {
+    background-color: #404249;
+    color: white;
+  }
+  p {
+    margin: 0;
+    margin-left: .5rem;
+
+    max-width: 300px;
+    text-wrap: nowrap;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    overflow: hidden;
+    
+    line-height: 4ch;
+  }
+  p > * {
+    vertical-align: middle;
+  }
+  .hash {
+    font-size: 1.5rem;
+    font-weight: 400;
+  }
+</style>

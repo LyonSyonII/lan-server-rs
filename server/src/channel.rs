@@ -1,5 +1,13 @@
 use crate::CHANNELS;
 
+#[derive(serde::Serialize, serde::Deserialize, Clone, Debug)]
+pub enum WebSocketMessage {
+    Text(String),
+    File(Vec<u8>),
+    Edit(usize, String),
+    Delete(usize)
+}
+
 #[derive(serde::Serialize, serde::Deserialize, Debug)]
 pub(crate) struct Channel {
     pub(crate) name: String,
@@ -11,7 +19,7 @@ pub(crate) struct Channel {
 
     #[serde(skip)]
     #[serde(default = "new_channel")]
-    tx: tokio::sync::broadcast::Sender<String>,
+    tx: tokio::sync::broadcast::Sender<WebSocketMessage>,
 }
 
 impl Channel {
@@ -26,20 +34,36 @@ impl Channel {
     pub(crate) fn subscribe(
         &self,
     ) -> (
-        tokio::sync::broadcast::Sender<String>,
-        tokio::sync::broadcast::Receiver<String>,
+        tokio::sync::broadcast::Sender<WebSocketMessage>,
+        tokio::sync::broadcast::Receiver<WebSocketMessage>,
     ) {
         (self.tx.clone(), self.tx.subscribe())
     }
-    pub(crate) fn send(&self, message: impl Into<String>) {
-        let _ = self.tx.send(message.into());
+
+    pub(crate) fn send(&self, message: WebSocketMessage) {
+        let _ = self.tx.send(message);
     }
-    pub(crate) async fn add_message(self: &std::sync::Arc<Self>, message: impl Into<String>) {
+
+    pub(crate) async fn handle_message(self: &std::sync::Arc<Self>, message: impl Into<String>) {
         let mut messages = self.messages.write().await;
         messages.push(crate::message::Message::new(message.into()));
         drop(messages);
         self.save_to_file().await.unwrap();
     }
+
+    pub async fn get_messages_range<'m>(
+        self: &'m std::sync::Arc<Self>,
+        range: std::ops::Range<usize>,
+    ) -> Vec<crate::message::Message> {
+        let messages = self.messages.read().await;
+        let start = range.start;
+        let end = range.end.min(messages.len());
+        messages
+            .get(start..end)
+            .map(|m| m.to_vec())
+            .unwrap_or_default()
+    }
+
     pub(crate) async fn save_to_file(self: &std::sync::Arc<Self>) -> std::io::Result<()> {
         use tokio::io::AsyncWriteExt;
 
@@ -64,8 +88,8 @@ impl Channel {
     }
 }
 
-fn new_channel() -> tokio::sync::broadcast::Sender<String> {
-    let (tx, _) = tokio::sync::broadcast::channel::<String>(100);
+fn new_channel() -> tokio::sync::broadcast::Sender<WebSocketMessage> {
+    let (tx, _) = tokio::sync::broadcast::channel::<WebSocketMessage>(100);
     tx
 }
 

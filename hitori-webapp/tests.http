@@ -1,0 +1,11 @@
+# @keepStreaming
+WS ws://192.168.1.47:5555/ws
+
+{
+    "test": "hola"
+}
+###
+POST url HTTP/1.1
+header name: header value
+
+content

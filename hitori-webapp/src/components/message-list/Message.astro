@@ -1,0 +1,27 @@
+---
+import type { Message as MessageProps } from './MessageListElement'
+import { marked } from "marked";
+
+type Props = MessageProps;
+
+const { date, text } = Astro.props;
+
+const html = await marked.parse(text);
+---
+<x-message>
+  <p>{date.toLocaleString()}</p>
+  <div set:html={html} />
+</x-message>
+
+
+
+<style>
+  div > :global(:first-child) {
+    margin-top: 0;
+  }
+  p {
+    color: #949ba4;
+    font-size: small;
+    margin: 0;
+  }
+</style>

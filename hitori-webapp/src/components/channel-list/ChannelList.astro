@@ -1,0 +1,63 @@
+---
+import { Icon } from "astro-icon/components";
+import Channel from "./Channel.astro";
+---
+
+<x-channel-list>
+  <header>
+    <button><Icon name="mdi:arrow-back" size={24} /></button>
+    <h1>TODO</h1>
+  </header>
+  <nav>
+    <ol id="channels">
+      <Channel name="DUMMY" hidden={true} />
+    </ol>
+  </nav>
+</x-channel-list>
+
+<style>
+  header {
+    display: flex;
+    height: 5%;
+    margin: var(--padding);
+    gap: 1rem;
+  }
+  h1 {
+    margin: 0;
+  }
+  button {
+    background-color: transparent;
+    border: none;
+    margin: 0;
+    color: white;
+  }
+  nav {
+    display: none;
+    background-color: #2b2d31;
+    margin: 0;
+    padding: var(--padding);
+  }
+  ol {
+    padding: 0;
+    margin-top: -0.5rem;
+    margin-left: -0.5rem;
+    margin-right: -0.5rem;
+    list-style: none;
+  }
+  @media screen and (min-width: 650px) {
+    header {
+      display: none;
+    }
+		nav {
+			display: block;
+      height: 100%;
+		}
+	}
+</style>
+
+<script>
+  import { ChannelElement } from "./ChannelElement";
+  import { ChannelListElement } from "./ChannelListElement";
+  customElements.define("x-channel", ChannelElement);
+  customElements.define("x-channel-list", ChannelListElement);
+</script>

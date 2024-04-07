@@ -1,12 +1,14 @@
 <x-message-input>
   <textarea name="message-input" id="message-input" autofocus spellcheck="false"/>
-  <div>Send or do things :)</div>
+  <div>Send</div>
 </x-message-input>
 
 <style>
   x-message-input {
     display: grid;
-    grid-template-columns: 80% 20%;
+    grid-template-columns: auto max-content;
+
+    min-width: fit-content;
 
     position: absolute;
     bottom: 0;
@@ -24,8 +26,6 @@
     resize: none;
     border: none;
     outline: none;
-    -webkit-box-shadow: none;
-    -moz-box-shadow: none;
     box-shadow: none;
     
     font-family: inherit;
@@ -43,8 +43,6 @@
 </style>
 
 <script>
-import DropTarget from "@uppy/drop-target";
-
   class MessageInputElement extends HTMLElement {
     public constructor() {
       super();

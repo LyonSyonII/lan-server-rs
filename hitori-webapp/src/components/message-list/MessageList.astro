@@ -13,17 +13,17 @@ import MessageInput from "./MessageInput.astro";
 
 <style>
   #wrapper {
+    min-width: fit-content;
+
     margin: var(--padding);
     position: relative;
-    max-height: calc(100vh - 3%);
-
+    
     display: grid;
-    grid-template-rows: 95% 5%;
+    grid-template-rows: 90% 10%;
   }
   x-message-list {
     display: block;
     padding: 0;
-    min-width: 500px;
     list-style: none;
     overflow: scroll;
     max-height: 100%;
@@ -96,7 +96,6 @@ import MessageInput from "./MessageInput.astro";
 
   if (navigator.geolocation) {
     navigator.geolocation.getCurrentPosition((map) => {
-      console.log({coords: map.coords})
       const lat = map.coords.latitude;
       const lon = map.coords.longitude;
       const url = 'https://maps.google.com/maps?q=' + lat + ',' + lon + '&t=&z=15&ie=UTF8&iwloc=&output=embed';
@@ -108,9 +107,8 @@ import MessageInput from "./MessageInput.astro";
       iframe.allowFullscreen = true;
       iframe.loading = "lazy";
 
-      document.body.querySelector("x-message-list").appendChild(iframe)
-      console.log(url)
-      
+      // document.body.querySelector("x-message-list").appendChild(iframe)
+    
     });
   }
 </script>

@@ -16,14 +16,18 @@ import Channel from "./Channel.astro";
 </x-channel-list>
 
 <style>
+  x-channel-list {
+    display: block;
+    background-color: #2b2d31;
+  }
   header {
     display: flex;
-    height: 5%;
     margin: var(--padding);
     gap: 1rem;
   }
   h1 {
     margin: 0;
+    font-size: larger;
   }
   button {
     background-color: transparent;
@@ -33,7 +37,6 @@ import Channel from "./Channel.astro";
   }
   nav {
     display: none;
-    background-color: #2b2d31;
     margin: 0;
     padding: var(--padding);
   }
@@ -43,14 +46,18 @@ import Channel from "./Channel.astro";
     margin-left: -0.5rem;
     margin-right: -0.5rem;
     list-style: none;
+    height: fit-content;
   }
   @media screen and (min-width: 650px) {
+    x-channel-list {
+      height: 100%;
+    }
     header {
       display: none;
     }
 		nav {
 			display: block;
-      height: 100%;
+      height: fit-content;
 		}
 	}
 </style>

@@ -11,7 +11,8 @@ import MessageList from "../components/message-list/MessageList.astro";
 		<meta name="viewport" content="width=device-width" />
 		<meta name="generator" content={Astro.generator} />
 		<title>Astro</title>
-		<AstroFont
+		<!-- TODO: Enable once internet is back -->
+<!-- 		<AstroFont
 			config={[
 				{
 					src: [],
@@ -23,10 +24,10 @@ import MessageList from "../components/message-list/MessageList.astro";
 					display: "swap",
 					selector: "body",
 					fallback: "sans-serif",
-					fetch: true,
+					fetch: true, // TODO: Reenable
 				},
 			]}
-		/>
+		/> -->
 	</head>
 	<body>
 		<ChannelList />

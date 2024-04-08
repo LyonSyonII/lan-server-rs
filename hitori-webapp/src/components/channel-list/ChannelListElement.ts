@@ -29,13 +29,15 @@ export class ChannelListElement extends HTMLElement {
       this.listElem.appendChild(channel);
       this.channels.push(channel);
     }
-    this.channels[0].select();
+    this.selected = parseInt(localStorage.getItem("hitori-selected") || "0");
+    this.triggerSelect(this.selected);
   }
 
   public triggerSelect(selected: number) {
     this.channels[this.selected].deselect();
     this.channels[selected].select();
     this.selected = selected;
+    localStorage.setItem("hitori-selected", String(selected));
     
     for (const e of this.onSelect) {
       e(selected)

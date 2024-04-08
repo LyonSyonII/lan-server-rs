@@ -1,0 +1,30 @@
+---
+---
+
+<x-location-message />
+
+<script>
+  class LocationMessage extends HTMLElement {
+    constructor() {
+      super();
+      if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition((map) => {
+          const lat = map.coords.latitude;
+          const lon = map.coords.longitude;
+          const url = 'https://maps.google.com/maps?q=' + lat + ',' + lon + '&t=&z=15&ie=UTF8&iwloc=&output=embed';
+          
+          const iframe = document.createElement("iframe");
+          iframe.src = url;
+          iframe.width = "600";
+          iframe.height = "450";
+          iframe.allowFullscreen = true;
+          iframe.loading = "lazy";
+          
+          this.innerHTML = iframe.innerHTML;
+        });
+      }
+    }
+  }
+
+  customElements.define("x-message-location", LocationMessage);
+</script>

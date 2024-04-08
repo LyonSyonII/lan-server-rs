@@ -1,5 +1,6 @@
 import type { ChannelListElement, Channel } from "../components/channel-list/ChannelListElement";
 import { MessageListElement, type Message } from "../components/message-list/MessageListElement";
+import type { MessageInputElement } from "./message-list/MessageInputElement";
 import DbUrl from "/DB.json?url"
 
 export async function refreshState() {
@@ -18,6 +19,17 @@ export async function refreshState() {
   channelList.addOnSelect((i) => {
     messageList.setMessages(database.messages[i])
   });
+
+  const messageInput: MessageInputElement = document.body.querySelector("x-message-input")!;
+  messageInput.addOnSubmit(async (text) => {
+    const i = channelList.selected;
+    const message: Message = {
+        date: (new Date()).toISOString(),
+        text
+    };
+    database.messages[i].push(message);
+    await messageList.addMessage(message);
+  })
   
   await messageList.setMessages(database.messages[channelList.selected]);
 }

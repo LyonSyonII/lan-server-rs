@@ -51,10 +51,14 @@ export class MessageListElement extends HTMLElement {
     this.innerHTML = "";
 
     for (const m of messages) {
-      const message = this.dummy.cloneNode(true) as MessageElement;
-      await message.init(m);
-      this.appendChild(message);
-      this.messages.push(message);
+      this.addMessage(m);
     }
+  }
+
+  public async addMessage(message: Message) {
+    const element = this.dummy.cloneNode(true) as MessageElement;
+    await element.init(message);
+    this.appendChild(element);
+    this.messages.push(element);
   }
 }

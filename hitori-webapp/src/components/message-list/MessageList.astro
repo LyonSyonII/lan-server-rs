@@ -6,9 +6,9 @@ import '@uppy/dashboard/dist/style.min.css';
 ---
 <div id="wrapper">
   <div id="scroll">
-  <x-message-list>
-      <Message date={""} text={""} />
-  </x-message-list>
+    <x-message-list>
+        <Message date={""} text={""} />
+    </x-message-list>
   </div>
   <!-- <button id="button-upload">Upload a file</button> -->
   <MessageInput />
@@ -29,6 +29,7 @@ import '@uppy/dashboard/dist/style.min.css';
   }
   #scroll {
     overflow: scroll;
+    height: fit-content;
     max-height: 100%;
     display: flex;
     flex-direction: column-reverse;

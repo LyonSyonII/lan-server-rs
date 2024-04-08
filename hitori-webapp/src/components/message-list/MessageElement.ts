@@ -9,7 +9,6 @@ export async function parseMarkdown(text: string): Promise<string> {
       langPrefix: "hljs language-",
       highlight(code, lang) {
         const language = hljs.getLanguage(lang) ? lang : "plaintext";
-        console.log({lang, language});
         return hljs.highlight(code, { language }).value;
       }
     })
@@ -18,18 +17,22 @@ export async function parseMarkdown(text: string): Promise<string> {
   return marked.parse(text, { breaks: true });
 }
 
+export type OnMessageEditCallback = (text: string, date: Date, i: number) => void;
+
 export class MessageElement extends HTMLElement {
   dateElem: HTMLParagraphElement;
   textElem: HTMLDivElement;
   
+  index: number;
   date: Date;
   text: string;
-
-  onEdit: ((this: MessageElement) => void)[]
+  
+  onEdit: (OnMessageEditCallback)[]
 
   public constructor() {
     super();
     
+    this.index = NaN;
     this.date = new Date();
     this.text = "UNDEFINED";
     this.dateElem = this.querySelector("p")!;
@@ -48,11 +51,16 @@ export class MessageElement extends HTMLElement {
 
       this.textElem.style.fontFamily = "";
       this.text = this.textElem.innerText;
-      this.textElem.innerHTML = await parseMarkdown(this.textElem.innerText);
+      this.textElem.innerHTML = await parseMarkdown(this.text);
+
+      for (const onEdit of this.onEdit) {
+        onEdit(this.text, this.date, this.index);
+      }
     })
   }
-
-  public async init(m: Message, onEdit?: (this: MessageElement) => void) {
+  
+  public async init(index: number, m: Message, onEdit?: OnMessageEditCallback) {
+    this.index = index;
     this.text = m.text;
     this.date = new Date(m.date);
     this.dateElem.textContent = this.date.toLocaleString();

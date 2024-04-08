@@ -3,13 +3,13 @@ import { MessageListElement, type Message } from "../components/message-list/Mes
 import type { MessageInputElement } from "./message-list/MessageInputElement";
 import DbUrl from "/DB.json?url"
 
+type Database = {
+  messages: Message[][];
+  channels: Channel[];
+};
+const database: Database = await fetch(DbUrl).then(r => r.json());
+
 export async function refreshState() {
-  type Database = {
-    messages: Message[][];
-    channels: Channel[];
-  };
-  const database: Database = await fetch(DbUrl).then(r => r.json());
-  
   const channelList: ChannelListElement = document.body.querySelector("x-channel-list")!;
   channelList.addChannels(database.channels);
   
@@ -28,8 +28,18 @@ export async function refreshState() {
         text
     };
     database.messages[i].push(message);
-    await messageList.addMessage(message);
-  })
+    await messageList.addMessage(database.messages.length-1, message);
+    // TODO: Save to permanent Database
+  });
+  messageList.addOnMessageEdit((text, date, index) => {
+    console.log({text, date, message: index});
+    const channel = channelList.selected;
+    database.messages[channel][index] = {
+      text,
+      date: date.toISOString()
+    };
+    // TODO: Save to permanent Database
+  });
   
   await messageList.setMessages(database.messages[channelList.selected]);
 }

@@ -1,4 +1,4 @@
-import { MessageElement } from "./MessageElement";
+import { MessageElement, type OnMessageEditCallback } from "./MessageElement";
 import Uppy from '@uppy/core';
 import Dashboard from '@uppy/dashboard';
 import DropTarget from "@uppy/drop-target";
@@ -12,12 +12,14 @@ export type Message = {
 export class MessageListElement extends HTMLElement {
   dummy: MessageElement;
   messages: MessageElement[];
+  onMessageEdit: OnMessageEditCallback[]
   selected: number;
   
   public constructor() {
     super();
     
     this.messages = [];
+    this.onMessageEdit = [];
     this.selected = 0;
     this.dummy = this.removeChild(this.children[0]) as MessageElement;
     
@@ -50,15 +52,23 @@ export class MessageListElement extends HTMLElement {
   public async setMessages(messages: Message[]) {
     this.innerHTML = "";
 
-    for (const m of messages) {
-      this.addMessage(m);
+    for (const [i, m] of messages.entries()) {
+      this.addMessage(i, m);
     }
   }
 
-  public async addMessage(message: Message) {
+  public async addMessage(index: number, message: Message) {
     const element = this.dummy.cloneNode(true) as MessageElement;
-    await element.init(message);
+    await element.init(index, message, (text, date, index) => {
+      for (const onEdit of this.onMessageEdit) {
+        onEdit(text, date, index)
+      }
+    });
     this.appendChild(element)
     this.messages.push(element);
+  }
+  
+  public addOnMessageEdit(callback: OnMessageEditCallback) {
+    this.onMessageEdit.push(callback)
   }
 }

@@ -68,3 +68,5 @@ export class MessageElement extends HTMLElement {
     onEdit && this.onEdit.push(onEdit);
   }
 }
+
+customElements.define("x-message", MessageElement);

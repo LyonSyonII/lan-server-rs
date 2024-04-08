@@ -1,5 +1,5 @@
 ---
-import { AstroFont } from "astro-font";
+// import { AstroFont } from "astro-font";
 import ChannelList from "../components/channel-list/ChannelList.astro";
 import MessageList from "../components/message-list/MessageList.astro";
 ---
@@ -60,9 +60,10 @@ import MessageList from "../components/message-list/MessageList.astro";
 			}
 		}
 	</style>
-
-	<script>
-		import { refreshState } from "../components/IndexElement";
-		await refreshState();
-	</script>
 </html>
+
+<script>
+	import { refreshState } from "../components";
+	
+	await refreshState();
+</script>

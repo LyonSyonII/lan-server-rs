@@ -72,3 +72,5 @@ export class MessageListElement extends HTMLElement {
     this.onMessageEdit.push(callback)
   }
 }
+
+customElements.define("x-message-list", MessageListElement);

@@ -14,6 +14,8 @@ export class ChannelListElement extends HTMLElement {
   public constructor() {
     super();
     
+    customElements.define("x-channel", ChannelElement);
+    
     this.listElem = this.querySelector("#channels")!;
     this.channels = [];
     this.selected = 0;
@@ -52,3 +54,5 @@ export class ChannelListElement extends HTMLElement {
     this.onSelect.push(onselect);
   }
 }
+
+customElements.define("x-channel-list", ChannelListElement);

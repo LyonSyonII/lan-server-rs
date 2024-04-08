@@ -1,15 +1,7 @@
 ---
-import type { Message as MessageProps } from './MessageListElement'
-import { parseMarkdown } from './MessageElement';
-
-type Props = MessageProps;
-
-const { date, text } = Astro.props;
-
-// const html = await parseMarkdown(text);
 ---
 <x-message>
-  <p>{date.toLocaleString()}</p>
+  <p></p>
   <div />
 </x-message>
 
@@ -23,9 +15,3 @@ const { date, text } = Astro.props;
     margin: 0;
   }
 </style>
-
-<script>
-  import { MessageElement } from "./MessageElement";
-  
-  customElements.define("x-message", MessageElement);
-</script>

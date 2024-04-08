@@ -1,36 +1,37 @@
 <x-message-input>
-  <textarea name="message-input" id="message-input" autofocus spellcheck="false"/>
-  <div>Send</div>
+  <textarea name="message-input" id="message-input" autofocus spellcheck="false" />
+  <button id="submit">Send</button>
 </x-message-input>
 
 <style>
   x-message-input {
     display: grid;
     grid-template-columns: auto max-content;
-    
+
     height: fit-content;
     min-width: fit-content;
 
     align-self: end;
-    
-    padding: 0.5em;
+
+    padding: 0.2em;
     border-radius: var(--border-radius);
+    border-color: antiquewhite;
     background-color: #2b2d31;
   }
 
   textarea {
     height: 30px;
     max-height: 40svh;
-    
+
     resize: none;
     border: none;
     outline: none;
     box-shadow: none;
-    
+
     font-family: monospace;
     font-size: 20px;
-    color: whitesmoke;
-    
+    color: gainsboro;
+
     border-radius: var(--border-radius);
     background-color: #313338;
 
@@ -38,30 +39,15 @@
   }
   textarea:focus {
     color: white;
-    background-color: #45484f;
+    background-color: #404249;
+  }
+  #submit {
+    cursor: pointer;
   }
 </style>
 
 <script>
-  class MessageInputElement extends HTMLElement {
-    public constructor() {
-      super();
-      const textarea = this.querySelector("textarea")!;
-
-      textarea.addEventListener("keydown", (e) => {
-        if (e.key == "Enter" && !e.shiftKey) {
-          e.preventDefault();
-          const target = e.target as HTMLTextAreaElement;
-          target.style.height = "26px";
-          target.value = "";
-        }
-      })
-      textarea.addEventListener("input", (e) => {
-        const target = e.target as HTMLTextAreaElement;
-        target.style.height = "1px";
-        target.style.height = `${target.scrollHeight}px`;
-      });
-    }
-  }
+  import { MessageInputElement } from "./MessageInputElement";
+  
   customElements.define("x-message-input", MessageInputElement);
 </script>

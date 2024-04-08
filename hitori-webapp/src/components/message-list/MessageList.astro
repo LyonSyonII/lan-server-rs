@@ -7,7 +7,7 @@ import '@uppy/dashboard/dist/style.min.css';
 <div id="wrapper">
   <div id="scroll">
     <x-message-list>
-        <Message date={""} text={""} />
+      <Message date={""} text={""} />
     </x-message-list>
   </div>
   <!-- <button id="button-upload">Upload a file</button> -->
@@ -41,9 +41,7 @@ import '@uppy/dashboard/dist/style.min.css';
 </style>
 
 <script>
-  import { MessageElement } from "./MessageElement";
   import { MessageListElement } from "./MessageListElement";
-
-  customElements.define("x-message", MessageElement);
+  
   customElements.define("x-message-list", MessageListElement);
 </script>

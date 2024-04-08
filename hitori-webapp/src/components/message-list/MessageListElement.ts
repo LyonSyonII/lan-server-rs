@@ -2,6 +2,7 @@ import { MessageElement } from "./MessageElement";
 import Uppy from '@uppy/core';
 import Dashboard from '@uppy/dashboard';
 import DropTarget from "@uppy/drop-target";
+import { downloadFile } from "../../utils";
 
 export type Message = {
   date: string

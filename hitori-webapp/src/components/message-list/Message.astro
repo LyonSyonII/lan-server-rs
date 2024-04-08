@@ -36,3 +36,9 @@ const html = await marked.parse(text, { breaks: true });
     margin: 0;
   }
 </style>
+
+<script>
+  import { MessageElement } from "./MessageElement";
+  
+  customElements.define("x-message", MessageElement);
+</script>

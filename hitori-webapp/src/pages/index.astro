@@ -1,5 +1,5 @@
 ---
-// import { AstroFont } from "astro-font";
+import { AstroFont } from "astro-font";
 import ChannelList from "../components/channel-list/ChannelList.astro";
 import MessageList from "../components/message-list/MessageList.astro";
 ---
@@ -11,8 +11,7 @@ import MessageList from "../components/message-list/MessageList.astro";
 		<meta name="viewport" content="width=device-width" />
 		<meta name="generator" content={Astro.generator} />
 		<title>Astro</title>
-		<!-- TODO: Enable once internet is back -->
-<!-- 		<AstroFont
+		<AstroFont
 			config={[
 				{
 					src: [],
@@ -24,10 +23,10 @@ import MessageList from "../components/message-list/MessageList.astro";
 					display: "swap",
 					selector: "body",
 					fallback: "sans-serif",
-					fetch: true, // TODO: Reenable
+					fetch: true,
 				},
 			]}
-		/> -->
+		/>
 	</head>
 	<body>
 		<ChannelList />
@@ -40,6 +39,24 @@ import MessageList from "../components/message-list/MessageList.astro";
 		:root {
 			background-color: #313338;
 			color: white;
+		}
+		
+		:global(.shiki) {
+			padding: var(--padding);
+			width: fit-content;
+		}
+		:global(.shiki, .shiki span) {
+			border-radius: var(--border-radius);
+			font-size: large;
+		}
+		:global(html.light .shiki),
+		:global(html.light .shiki span) {
+			color: var(--shiki-light) !important;
+			background-color: var(--shiki-light-bg) !important;
+			/* Optional, if you also want font styles */
+			font-style: var(--shiki-light-font-style) !important;
+			font-weight: var(--shiki-light-font-weight) !important;
+			text-decoration: var(--shiki-light-text-decoration) !important;
 		}
 		html {
 			margin: 0;

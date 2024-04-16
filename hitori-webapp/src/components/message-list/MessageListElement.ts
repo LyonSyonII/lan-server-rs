@@ -12,7 +12,6 @@ export class MessageListElement extends HTMLElement {
 	messages: MessageElement[];
 	onMessageEdit: OnMessageEditCallback[];
 	selected: number;
-	numShown: number;
 
 	public constructor() {
 		super();
@@ -21,7 +20,16 @@ export class MessageListElement extends HTMLElement {
 		this.onMessageEdit = [];
 		this.selected = 0;
 		this.dummy = this.removeChild(this.children[0]) as MessageElement;
-		this.numShown = 0;
+		
+		this.parentElement?.addEventListener("scroll", () => {
+			const parent = this.parentElement;
+			if (!parent) return;
+
+			const top = -parent.scrollHeight + parent.clientHeight;
+			if (parent.scrollTop <= top) {
+				
+			}
+		})
 	}
 
 	async connectedCallback() {

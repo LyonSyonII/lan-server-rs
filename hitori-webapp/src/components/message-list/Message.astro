@@ -6,8 +6,25 @@
 </x-message>
 
 <style>
+  x-message {
+    content-visibility: auto;
+  }
+  div {
+    transition: all 0.5s;
+    min-height: var(--msg-height, fit-content);
+  }
   div > :global(:first-child) {
     margin-top: 0;
+  }
+  div[contenteditable] {
+    min-height: var(--msg-height, fit-content);
+    outline: 0px solid transparent;
+    border-radius: var(--border-radius);
+    background-color: #404249 !important;
+    padding: var(--padding);
+    
+    font-family: monospace;
+    font-size: 1.5em;
   }
   p {
     color: #949ba4;

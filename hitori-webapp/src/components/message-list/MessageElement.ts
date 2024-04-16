@@ -53,16 +53,15 @@ export class MessageElement extends HTMLElement {
 		this.textElem = this.safeQuerySelector("div");
 
 		this.textElem.addEventListener("dblclick", () => {
+			this.textElem.style.setProperty("--msg-height", String(this.textElem.clientHeight));
 			this.textElem.innerText = this.text;
-			this.textElem.style.fontFamily = "monospace";
 
 			this.textElem.contentEditable = "true";
 			this.textElem.focus();
 		});
 		this.textElem.addEventListener("blur", async () => {
-			this.textElem.contentEditable = "false";
-
-			this.textElem.style.fontFamily = "";
+			this.textElem.removeAttribute("contenteditable");
+		
 			this.text = this.textElem.innerText;
 			this.textElem.innerHTML = await parseMarkdown(this.text);
 

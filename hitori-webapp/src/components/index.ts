@@ -16,15 +16,28 @@ type Database = {
 	channels: Channel[];
 };
 const database: Database = await fetch(DbUrl).then((r) => r.json());
-(async () => {
+const serverIP = await Promise.any(
+	Array.from({ length: 252 }, async (_, i) => {
+		const ip = `http://192.168.1.${i + 2}:5555`;
+		try {
+			const status = await fetch(ip, { mode: "cors" }).then((r) => r.status);
+			return (status === 200 && Promise.resolve(ip)) || Promise.reject();
+		} catch {
+			return Promise.reject();
+		}
+	}),
+);
+alert(`Connected to ${serverIP}`)
+
+/* await (async () => {
 	const { faker } = await import("@faker-js/faker");
 	const date = new Date().toISOString();
 	const text = faker.lorem.lines(3);
 	const messages: Message[] = await Promise.all(
-		[...Array(1000)].map(async () => ({ date, text })),
+		[...Array(100000)].map(async () => ({ date, text })),
 	);
 	database.messages[2].push(...messages);
-})();
+})(); */
 
 export async function refreshState() {
 	const channelList: ChannelListElement =

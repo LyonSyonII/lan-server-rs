@@ -8,55 +8,18 @@ mod message;
 
 pub(crate) const CHANNELS: &str = "/tmp/hitori/channels";
 
-struct AppState {
-    channels: tokio::sync::RwLock<
-        std::collections::HashMap<String, std::sync::Arc<crate::channel::Channel>>,
-    >,
-}
-
-impl AppState {
-    async fn load() -> Self {
-        tokio::task::spawn_blocking(|| {
-            let mut channels = std::collections::HashMap::new();
-            std::fs::create_dir_all("/tmp/hitori/channels")?;
-            for channel in std::fs::read_dir("/tmp/hitori/channels")?.flatten() {
-                let reader = std::fs::OpenOptions::new()
-                    .read(true)
-                    .open(channel.path())?;
-                let channel: channel::Channel = serde_yaml::from_reader(reader).unwrap();
-                channels.insert(channel.name.clone(), std::sync::Arc::new(channel));
-            }
-            Ok::<AppState, std::io::Error>(Self {
-                channels: tokio::sync::RwLock::new(channels),
-            })
-        })
-        .await
-        .unwrap()
-        .unwrap()
-    }
-
-    /// Returns "true" if the channel already exists
-    async fn create_channel(&self, name: impl Into<String>) -> bool {
-        let channels = &mut *self.channels.write().await;
-        let name = name.into();
-        let channel = std::sync::Arc::new(crate::channel::Channel::new(name.clone()));
-
-        if let std::collections::hash_map::Entry::Vacant(e) = channels.entry(name) {
-            channel.save_to_file().await.unwrap();
-            e.insert(channel);
-            false
-        } else {
-            true
-        }
-    }
-}
-
 #[tokio::main]
 async fn main() {
-    let app_state = std::sync::Arc::new(AppState::load().await);
-
     let ip = local_ip_address::local_ip().expect("Could not get local IP address!");
     let addr = std::net::SocketAddr::new(ip, 5555);
+
+    start_mdns_server(ip);
+
+    let app_state = std::sync::Arc::new(AppState::load().await);
+    
+    let cors = tower_http::cors::CorsLayer::new()
+        .allow_methods([axum::http::Method::GET, axum::http::Method::POST])
+        .allow_origin("localhost".parse::<http::HeaderValue>().unwrap());
 
     let app = axum::Router::new()
         .route("/", get(index))
@@ -65,7 +28,8 @@ async fn main() {
         .route("/channels", post(post_channels))
         .route("/messages", get(get_messages))
         .route("/messages/num", get(get_num_messages))
-        .with_state(app_state);
+        .with_state(app_state)
+        .layer(cors);
     let listener = tokio::net::TcpListener::bind(addr)
         .await
         .unwrap_or_else(|_| panic!("Could not bind to address: {addr}"));
@@ -75,8 +39,26 @@ async fn main() {
         .expect("Could not start server!");
 }
 
+fn start_mdns_server(ip: std::net::IpAddr) {
+    std::thread::spawn(move || {
+        let hostname = gethostname::gethostname();
+        let hostname = hostname.to_string_lossy();
+    
+        let service = mdns_sd::ServiceInfo::new(
+            "_hitori_._udp.local.",
+            &hostname,
+            &hostname,
+            ip,
+            5555,
+            &[] as &[(&str, &str)]
+        ).unwrap();
+        let mdns = mdns_sd::ServiceDaemon::new().unwrap();
+        mdns.register(service).unwrap();
+    });
+}
+
 async fn index() -> impl axum::response::IntoResponse {
-    axum::response::Html("<h1>Hello world!<h1/>")
+    axum::http::StatusCode::OK
 }
 
 async fn get_channels(
@@ -187,5 +169,48 @@ async fn websocket(
     tokio::select! {
         _ = (&mut send_task) => recv_task.abort(),
         _ = (&mut recv_task) => send_task.abort()
+    }
+}
+
+struct AppState {
+    channels: tokio::sync::RwLock<
+        std::collections::HashMap<String, std::sync::Arc<crate::channel::Channel>>,
+    >,
+}
+
+impl AppState {
+    async fn load() -> Self {
+        tokio::task::spawn_blocking(|| {
+            let mut channels = std::collections::HashMap::new();
+            std::fs::create_dir_all("/tmp/hitori/channels")?;
+            for channel in std::fs::read_dir("/tmp/hitori/channels")?.flatten() {
+                let reader = std::fs::OpenOptions::new()
+                    .read(true)
+                    .open(channel.path())?;
+                let channel: channel::Channel = serde_yaml::from_reader(reader).unwrap();
+                channels.insert(channel.name.clone(), std::sync::Arc::new(channel));
+            }
+            Ok::<AppState, std::io::Error>(Self {
+                channels: tokio::sync::RwLock::new(channels),
+            })
+        })
+        .await
+        .unwrap()
+        .unwrap()
+    }
+
+    /// Returns "true" if the channel already exists
+    async fn create_channel(&self, name: impl Into<String>) -> bool {
+        let channels = &mut *self.channels.write().await;
+        let name = name.into();
+        let channel = std::sync::Arc::new(crate::channel::Channel::new(name.clone()));
+
+        if let std::collections::hash_map::Entry::Vacant(e) = channels.entry(name) {
+            channel.save_to_file().await.unwrap();
+            e.insert(channel);
+            false
+        } else {
+            true
+        }
     }
 }

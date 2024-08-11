@@ -1,26 +1,48 @@
-use actix_web::{get, Responder};
+use tokio::io::AsyncWriteExt;
 
-#[get("/")]
-async fn hello() -> impl Responder {
-    "Hello World!"
+#[tokio::main]
+async fn main() -> std::io::Result<()> {
+    let (handle, addr) = listen().await?;
+    
+    println!("Listening on http://{}", addr);
+
+    handle.await.unwrap();
+
+    Ok(())
 }
 
-#[actix_web::main]
-async fn main() -> std::io::Result<()> {
-    #[cfg(debug_assertions)]
-    {
-        env_logger::init_from_env(env_logger::Env::new().default_filter_or("info"));
-    }
+async fn listen() -> std::io::Result<(tokio::task::JoinHandle<()>, std::net::SocketAddr)> {
+    let listener = tokio::net::TcpListener::bind("0.0.0.0:5555").await?;
+    let addr = listener.local_addr()?;
+    let handle = tokio::spawn(async move {
+        loop {
+            if let Ok((stream, addr)) = listener.accept().await {
+                tokio::spawn(handle_client(stream, addr));
+            }
+        }
+    });
+    Ok((handle, addr))
+}
 
-    let ip = local_ip_address::local_ip().unwrap();
-    let server = actix_web::HttpServer::new(|| {
-        actix_web::App::new()
-            .wrap(actix_web::middleware::Logger::default())
-            .service(hello)
-    })
-    .bind((ip, 5555))?
-    .run();
+async fn handle_client(mut stream: tokio::net::TcpStream, addr: std::net::SocketAddr) {
+    println!("Accepted client {addr}");
+    
+    let response = include_html!("./html/index.html");
+    stream.write_all(response).await.unwrap();
+}
 
-    println!("Listening on http://{}:5555", ip);
-    server.await
+#[macro_export]
+macro_rules! html {
+    ( $($html:tt)* ) => {{
+        const HTML: &str = stringify!($($html)*);
+        const_format::formatcp!("HTTP/1.1 200 OK\r\nContent-Length: {}\r\n\r\n{HTML}", str::len(HTML)).as_bytes()
+    }}
+}
+
+#[macro_export]
+macro_rules! include_html {
+    ( $html:literal ) => {{
+        const HTML: &str = include_str!($html);
+        const_format::formatcp!("HTTP/1.1 200 OK\r\nContent-Length: {}\r\n\r\n{HTML}", str::len(HTML)).as_bytes()
+    }};
 }
